@@ -1,17 +1,21 @@
 #Diretorios de Include
 
-INC_DIR= ../I2C_Library"
-INC_DIR= ../SSD1306_OLED_Library"
-INC_DIR= ../OLED_API"
-INC_DIR= ../OLED_CONTROLER"
+INC= $(HOME)/Biometric_crypto/include/
+LIB= $(HOME)/Biometric_crypto/libs/
+#b OLED_LIB = $(HOME)/Biometric_crypto/libs/liboled.so
 
-SOURCES = main.c SSD1306_OLED_Library/SSD1306_OLED.c OLED_API/example_app.c I2C_Library/I2C.c OLED_CONTROLER/OLED_CONTROLER.c
+SOURCES = main.c source/SSD1306_OLED.c source/example_app.c source/I2C.c source/OLED_CONTROLER.c
+#SOURCERS_OLED = source/SSD1306_OLED.c source/example_app.c source/I2C.c source/OLED_CONTROLER.c
 OBJS := $(SOURCES:.c=.o)
-CPPFLAGS := -I SSD1306_OLED_Library -I I2C_Library
 CFLAGS := -g
 
+OBJS := $(SOURCES:.c=.o)
+CFLAGS = -fPIC -Wall -Wextra -O2 -g
+LDFLAGS = -shared   # linking flags
+CC = gcc  # C compiler
+
 ssd: $(OBJS)
-	$(CC) $^ -o $@
+	$(CC) -I $(INC) $^ -o $@ 
 
 clean:
 	rm -rf ssd $(OBJS)
