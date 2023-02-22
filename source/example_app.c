@@ -33,10 +33,10 @@ SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include  <signal.h>
+#include <signal.h>
 #include <unistd.h>
-#include "SSD1306_OLED.h"
-#include "example_app.h"
+#include "../include/SSD1306_OLED.h"
+#include "../include/example_app.h"
 
 /* MACRO's */
 #define LOGO16_GLCD_HEIGHT 16

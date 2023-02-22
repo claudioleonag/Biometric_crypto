@@ -6,7 +6,7 @@
 #include <signal.h>
 
 /* Header Files */
-#include "OLED_CONTROLER/OLED_CONTROLER.h"
+#include "include/OLED_CONTROLER.h"
 
 
 int main()

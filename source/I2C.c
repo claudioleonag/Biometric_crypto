@@ -50,7 +50,7 @@ typedef char i2c_char_t;
 #endif
 
 /* Header Files */
-#include "I2C.h"
+#include "../include/I2C.h"
 
 
 /* Exposed objects for i2c-x */

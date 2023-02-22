@@ -6,9 +6,9 @@
 #include <signal.h>
 
 /* Header Files */
-#include "../I2C_Library/I2C.h" 
-#include "../SSD1306_OLED_Library/SSD1306_OLED.h"
-#include "../OLED_API/example_app.h"
+#include "../include/I2C.h" 
+#include "../include/SSD1306_OLED.h"
+#include "../include/example_app.h"
 
 /* Oh Compiler-Please leave me as is */
 volatile unsigned char flag = 0;
