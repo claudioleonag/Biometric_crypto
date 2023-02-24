@@ -161,7 +161,7 @@ extern void drawTriangle(short x0, short y0, short x1, short y1, short x2, short
 extern void fillTriangle(short x0, short y0, short x1, short y1, short x2, short y2, short color);
 extern void drawRoundRect(short x, short y, short w, short h, short r, short color);
 extern void fillRoundRect(short x, short y, short w, short h, short r, short color);
-extern void drawBitmap(short x, short y, const unsigned char bitmap[], short w, short h, short color);
+extern void drawBitmap(short x, short y, const char bitmap[], short w, short h, short color);
 extern short oled_write(unsigned char c);
 
 /*SSD1306 Text and Character Handling API's */
@@ -169,9 +169,9 @@ extern void setTextSize(unsigned char s);
 extern void setTextColor(short c);
 extern void setTextWrap(bool w);
 extern void drawChar(short x, short y, unsigned char c, short color, short bg, unsigned char size);
-extern short print_str(const unsigned char *strPtr);
+extern short print_str(const char *strPtr);
 extern short println();
-extern short print_strln(const unsigned char *strPtr);
+extern short print_strln(const char *strPtr);
 
 /*SSD1306 Number Handling API's */
 extern short printNumber(unsigned long n, unsigned char base);

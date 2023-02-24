@@ -50,7 +50,7 @@ SOFTWARE.
 extern volatile unsigned char flag;
 
 /* Bit Map - Taken from Adafruit SSD1306 OLED Library  */
-static const unsigned char logo16_glcd_bmp[] =
+static const char logo16_glcd_bmp[] =
 {
  0b00000000, 0b11000000,
  0b00000001, 0b11000000,
@@ -310,7 +310,7 @@ void display_invert_normal()
 }
 
 /* Draw a bitmap and 'animate' movement */
-void testdrawbitmap(const unsigned char *bitmap, unsigned char w, unsigned char h)
+void testdrawbitmap(const char *bitmap, unsigned char w, unsigned char h)
 {
     unsigned char icons[NUMFLAKES][3], f = 0;
 

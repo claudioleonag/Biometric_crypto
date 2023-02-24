@@ -12,10 +12,10 @@ CFLAGS := -g
 OBJS := $(SOURCES:.c=.o)
 CFLAGS = -fPIC -Wall -Wextra -O2 -g
 LDFLAGS = -shared   # linking flags
-CC = gcc  # C compiler
+CC = g++  # C compiler
 
 ssd: $(OBJS)
-	$(CC) -I $(INC) $^ -o $@ 
+	$(CC) -I$(INC) -L$(LIB) $^ -o $@ -lsgfplib -lsgnfiq -lsgimage -lsgfpamx -lsgfdu05 -lusb -lpthread
 
 clean:
 	rm -rf ssd $(OBJS)

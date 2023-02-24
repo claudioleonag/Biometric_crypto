@@ -44,7 +44,7 @@ SOFTWARE.
 
 /* MACROS */
 #define SWAP(x,y)     {short temp; temp = x; x = y; y = temp;}
-#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+#define pgm_read_byte(addr) (*(const char *)(addr))
 #define pgm_read_word(addr) (*(const unsigned long *)(addr))
 #define pgm_read_dword(addr) (*(const unsigned long *)(addr))
 #define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
@@ -74,10 +74,10 @@ static void drawFastVLine(short x, short y,short h, short color);
 static void writeFastVLine(short x, short y, short h, short color);
 static void drawFastHLine(short x, short y,short w, short color);
 static void writeFastHLine(short x, short y, short w, short color);
-static short print(const unsigned char *buffer, short size);
+static short print(const char *buffer, short size);
 
 // Standard ASCII 5x7 font
-static const unsigned char ssd1306_font5x7[] = {
+static const char ssd1306_font5x7[] = {
                                                 0x00, 0x00, 0x00, 0x00, 0x00,
                                                 0x3E, 0x5B, 0x4F, 0x5B, 0x3E,
                                                 0x3E, 0x6B, 0x4F, 0x6B, 0x3E,
@@ -2097,7 +2097,7 @@ void fillRoundRect(short x, short y, short w, short h, short r, short color)
  *                 @h: height
  *                 @color: Pixel color
  ****************************************************************/
-void drawBitmap(short x, short y, const unsigned char bitmap[], short w, short h, short color)
+void drawBitmap(short x, short y, const char bitmap[], short w, short h, short color)
 {
     short byteWidth = 0, j = 0, i = 0;
     unsigned char byte = 0;
@@ -2395,7 +2395,7 @@ short oled_write(unsigned char c)
  * Params        : @buffer: Ptr to buffer containing the string
  *                 @size: Length of the string.
  ****************************************************************/
-short print(const unsigned char *buffer, short size)
+short print(const char *buffer, short size)
 {
     short n = 0;
     while(size--)
@@ -2414,7 +2414,7 @@ short print(const unsigned char *buffer, short size)
  * Returns       : No. of characters printed
  * Params        : @strPtr: Ptr to buffer containing the string
  ****************************************************************/
-short print_str(const unsigned char *strPtr)
+short print_str(const char *strPtr)
 {
     return print(strPtr, strlen(strPtr));
 }
@@ -2436,7 +2436,7 @@ short println()
  * Returns       : No. of characters printed
  * Params        : @strPtr: Ptr to buffer containing the string
  ****************************************************************/
-short print_strln(const unsigned char *strPtr)
+short print_strln(const char *strPtr)
 {
     short n = 0;
     n = print(strPtr, strlen(strPtr));
