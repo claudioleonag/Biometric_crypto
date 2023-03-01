@@ -4,4 +4,4 @@
 void init_oled(void);
 void write_oled(char *message, int x, int y, int size);
 
-#endif /* I2C_H_ */
+#endif 

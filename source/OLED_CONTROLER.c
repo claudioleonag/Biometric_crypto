@@ -75,6 +75,7 @@ void init_oled(void)
 
 void write_oled(char *message, int x, int y, int size)
 {
+    clearDisplay();
     setTextSize(size);
     setTextColor(WHITE);
     setCursor(x,y);
