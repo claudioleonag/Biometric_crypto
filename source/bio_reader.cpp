@@ -29,18 +29,7 @@ char kbWhichFinger[100];
 int fingerLength = 0;
 char *finger;
 int fingerID = 0;
-BYTE *imageBuffer1;
-BYTE *imageBuffer2;
-BYTE *imageBuffer3;
-BYTE *minutiaeBuffer1;
-BYTE *minutiaeBuffer2;
-BYTE *ansiMinutiaeBuffer1;
-BYTE *ansiMinutiaeBuffer2;
-BYTE *isoMinutiaeBuffer1;
-BYTE *isoMinutiaeBuffer2;
-BYTE *isoCompactMinutiaeBuffer1;
-BYTE *isoCompactMinutiaeBuffer2;
-FILE *fp = NULL;
+FILE *fp = NULL; 
 SGDeviceInfoParam deviceInfo;
 DWORD score;
 SGFingerInfo fingerInfo;
@@ -132,51 +121,100 @@ int open_reader()
             printf("\tdeviceInfo.FWVersion  : %04X\n", (unsigned int) deviceInfo.FWVersion);  
         }
     }
+    
     return 0;
 }
 
-void read_finger()
-{
+void read_finger(BYTE *imageBuffer1)
+{ 
     do
+    {    
+    ///////////////////////////////////////////////
+    // getImage() - 1st Capture
+    printf("\n\n\n Please place your finger on sensor and press <ENTER> ");
+    getc(stdin);
+    //imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageHeight*deviceInfo.ImageWidth); - removido pois quebra o ponteiro
+    strcpy(function,"GetImage()");
+    printf("\nCall %s\n",function);
+    err = sgfplib->GetImage(imageBuffer1);
+    printf("%s returned: %ld\n",function,err);
+    if (err == SGFDX_ERROR_NONE)
     {
-    
-        ///////////////////////////////////////////////
-        // getImage() - 1st Capture
-        printf("\n\n\n Please place your finger on sensor and press <ENTER> ");
-        getc(stdin);
-        imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageHeight*deviceInfo.ImageWidth);
-        strcpy(function,"GetImage()");
-        printf("\nCall %s\n",function);
-        err = sgfplib->GetImage(imageBuffer1);
-        printf("%s returned: %ld\n",function,err);
-        if (err == SGFDX_ERROR_NONE)
-        {
         sprintf(kbBuffer,"fingerData/digital_%i.raw",fingerID);
         fp = fopen(kbBuffer,"wb"); 
         fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
         fclose(fp);
-        }
+    }
 
-        ///////////////////////////////////////////////
-        // getImageQuality()
-        strcpy(function,"GetImageQuality()");
-        printf("\nCall %s\n",function);
-        err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality);
-        printf("%s returned: %ld\n",function,err);
-        printf("Image quality : [%ld]\n",quality);
+    ///////////////////////////////////////////////
+    // getImageQuality()
+    strcpy(function,"GetImageQuality()");
+    printf("\nCall %s\n",function);
+    err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality);
+    printf("%s returned: %ld\n",function,err);
+    printf("Image quality : [%ld]\n",quality);
 
-        ///////////////////////////////////////////////
-        // ComputeNFIQ()
-        strcpy(function,"ComputeNFIQ()");
-        printf("\nCall %s\n",function);
-        nfiq = sgfplib->ComputeNFIQ(imageBuffer1, deviceInfo.ImageWidth, deviceInfo.ImageHeight);
-        printf("NFIQ : [%ld]\n",nfiq);
-
-        }while(nfiq < 80 && quality < 80);
+    ///////////////////////////////////////////////
+    // ComputeNFIQ()
+    strcpy(function,"ComputeNFIQ()");
+    printf("\nCall %s\n",function);
+    nfiq = sgfplib->ComputeNFIQ(imageBuffer1, deviceInfo.ImageWidth, deviceInfo.ImageHeight);
+    printf("NFIQ : [%ld]\n",nfiq);
+    }while(nfiq < 80 && quality < 80);  
 }
 
-void create_template()  
+void close_reader()
 {
+    ///////////////////////////////////////////////
+    // closeDevice()
+    printf("\nCall CloseDevice()\n");
+    err = sgfplib->CloseDevice();
+    printf("CloseDevice returned : [%ld]\n",err);
+
+    ///////////////////////////////////////////////
+    // Destroy SGFPLib object
+    strcpy(function,"DestroySGFPMObject()");
+    printf("\nCall %s\n",function);
+    err = DestroySGFPMObject(sgfplib);
+    printf("%s returned: %ld\n",function,err);
+}
+
+void match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2)
+{
+
+    // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)
+    strcpy(function,"SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)");
+    printf("\nCall %s\n",function);
+    err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_ISO19794);
+    printf("%s returned: %ld\n",function,err);
+
+    ///////////////////////////////////////////////
+    // MatchTemplate()
+    strcpy(function,"MatchIsoTemplate(ISO1,ISO2)");
+    printf("\nCall %s\n",function);
+    err = sgfplib->MatchIsoTemplate(templateBuffer1, 0, templateBuffer2, 0, SL_NORMAL, &matched);
+    printf("%s returned: %ld\n",function,err);
+    if (matched == true)
+      printf("<<MATCH>>\n");
+    else
+      printf("<<NO MATCH>>\n");
+
+    ///////////////////////////////////////////////
+    // GetIsoMatchingScore()
+    strcpy(function,"GetIsoMatchingScore(ISO1,ISO2)");
+    printf("\nCall %s\n",function);
+    err = sgfplib->GetIsoMatchingScore(templateBuffer1, 0, templateBuffer2, 0, &score);
+    printf("%s returned: %ld\n",function,err);
+    printf("Score is : [%ld]\n",score);    
+
+
+}
+
+void create_template(BYTE *imageBuffer1, BYTE *templateBuffer1)  
+{
+    printf ("\n the address of data in myFunc: %p\n", imageBuffer1);
+    printf ("\n the address of data in myFunc: %p\n", templateBuffer1);
+
     ///////////////////////////////////////////////
     // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)
     strcpy(function,"SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)");
@@ -196,12 +234,13 @@ void create_template()
     // getMinutiae()
     strcpy(function,"CreateTemplate()");
     printf("\nCall %s\n",function);
-    isoMinutiaeBuffer2 = (BYTE*) malloc(templateSizeMax);
+    //templateBuffer1 = (BYTE*) malloc(sizeof(templateSizeMax)); - removido pois quebra o ponteiro
     fingerInfo.FingerNumber = SG_FINGPOS_UK;
     fingerInfo.ViewNumber = 0;
     fingerInfo.ImpressionType = SG_IMPTYPE_LP;
     fingerInfo.ImageQuality = getPIVQuality(quality); //0 to 100
-    err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, isoMinutiaeBuffer2);
+    printf("Valor quality %d\n", fingerInfo.ImageQuality);
+    err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, templateBuffer1);
     printf("CreateTemplate returned : [%ld]\n",err);
     if (err == SGFDX_ERROR_NONE)
     {
@@ -209,54 +248,20 @@ void create_template()
         // getTemplateSize()
         strcpy(function,"GetTemplateSize()");
         printf("\nCall %s\n",function);
-        err = sgfplib->GetTemplateSize(isoMinutiaeBuffer2, &templateSize);
+        err = sgfplib->GetTemplateSize(templateBuffer1, &templateSize);
         printf("%s returned: %ld\n",function,err);
         printf("Template Size : [%ld]\n",templateSize);
         sprintf(kbBuffer,"fingerData/digital_%i.iso",fingerID);
         fp = fopen(kbBuffer,"wb");
-        fwrite (isoMinutiaeBuffer2 , sizeof (BYTE) , templateSize , fp);
+        fwrite (templateBuffer1 , sizeof (BYTE) , templateSize , fp);
         fclose(fp);
         fingerID++;
 
         strcpy(function,"GetNumOfMinutiae()");
         printf("\nCall %s\n",function);
-        err = sgfplib->GetNumOfMinutiae(TEMPLATE_FORMAT_ISO19794, isoMinutiaeBuffer2, &numOfMinutiae);
+        err = sgfplib->GetNumOfMinutiae(TEMPLATE_FORMAT_ISO19794, templateBuffer1, &numOfMinutiae);
         printf("%s returned: %ld\n",function,err);
         printf("Minutiae Count : [%ld]\n",numOfMinutiae);
     }   
 }
 
-void close_reader()
-{
-    ///////////////////////////////////////////////
-    // closeDevice()
-    printf("\nCall CloseDevice()\n");
-    err = sgfplib->CloseDevice();
-    printf("CloseDevice returned : [%ld]\n",err);
-
-    ///////////////////////////////////////////////
-    // Destroy SGFPLib object
-    strcpy(function,"DestroySGFPMObject()");
-    printf("\nCall %s\n",function);
-    err = DestroySGFPMObject(sgfplib);
-    printf("%s returned: %ld\n",function,err);
-
-    free(imageBuffer1);
-    free(imageBuffer2);
-    free(minutiaeBuffer1);
-    free(minutiaeBuffer2);
-    free(ansiMinutiaeBuffer1);
-    free(ansiMinutiaeBuffer2);
-    free(isoMinutiaeBuffer1);
-    free(isoMinutiaeBuffer2);
-    free(finger);
-    imageBuffer1 = NULL;
-    imageBuffer2 = NULL;
-    minutiaeBuffer1 = NULL;
-    minutiaeBuffer2 = NULL;
-    ansiMinutiaeBuffer1 = NULL;
-    ansiMinutiaeBuffer2 = NULL;
-    isoMinutiaeBuffer1 = NULL;
-    isoMinutiaeBuffer2 = NULL;
-    finger = NULL;
-}
