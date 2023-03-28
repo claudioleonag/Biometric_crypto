@@ -31,7 +31,7 @@ char *finger;
 int fingerID = 0;
 FILE *fp = NULL; 
 SGDeviceInfoParam deviceInfo;
-DWORD score;
+
 SGFingerInfo fingerInfo;
 BOOL matched;
 DWORD nfiq;
@@ -131,20 +131,19 @@ void read_finger(BYTE *imageBuffer1)
     {    
     ///////////////////////////////////////////////
     // getImage() - 1st Capture
-    printf("\n\n\n Please place your finger on sensor and press <ENTER> ");
-    getc(stdin);
+    printf("\n Please place your finger on sensor and press <ENTER> ");
     //imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageHeight*deviceInfo.ImageWidth); - removido pois quebra o ponteiro
     strcpy(function,"GetImage()");
     printf("\nCall %s\n",function);
     err = sgfplib->GetImage(imageBuffer1);
     printf("%s returned: %ld\n",function,err);
-    if (err == SGFDX_ERROR_NONE)
+    /*if (err == SGFDX_ERROR_NONE)
     {
         sprintf(kbBuffer,"fingerData/digital_%i.raw",fingerID);
         fp = fopen(kbBuffer,"wb"); 
         fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
         fclose(fp);
-    }
+    }*/
 
     ///////////////////////////////////////////////
     // getImageQuality()
@@ -179,7 +178,7 @@ void close_reader()
     printf("%s returned: %ld\n",function,err);
 }
 
-void match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2)
+bool match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2, DWORD *score)
 {
 
     // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)
@@ -201,20 +200,17 @@ void match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2)
 
     ///////////////////////////////////////////////
     // GetIsoMatchingScore()
-    strcpy(function,"GetIsoMatchingScore(ISO1,ISO2)");
+    /*strcpy(function,"GetIsoMatchingScore(ISO1,ISO2)");
     printf("\nCall %s\n",function);
-    err = sgfplib->GetIsoMatchingScore(templateBuffer1, 0, templateBuffer2, 0, &score);
+    err = sgfplib->GetIsoMatchingScore(templateBuffer1, 0, templateBuffer2, 0, score);
     printf("%s returned: %ld\n",function,err);
-    printf("Score is : [%ld]\n",score);    
+    printf("Score is : [%ld]\n",*score);*/
 
-
+    return matched; 
 }
 
 void create_template(BYTE *imageBuffer1, BYTE *templateBuffer1)  
 {
-    printf ("\n the address of data in myFunc: %p\n", imageBuffer1);
-    printf ("\n the address of data in myFunc: %p\n", templateBuffer1);
-
     ///////////////////////////////////////////////
     // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)
     strcpy(function,"SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)");
