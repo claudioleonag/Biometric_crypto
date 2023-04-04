@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "../include/bio_reader.h"
 #include "../include/sgfplib.h"
+#include "../include/sodium.h"
 
 int  getPIVQuality(int quality)
 {
@@ -178,7 +179,7 @@ void close_reader()
     printf("%s returned: %ld\n",function,err);
 }
 
-bool match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2, DWORD *score)
+bool match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2, DWORD *score) //descriptografa as templates e compara
 {
 
     // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)
@@ -209,7 +210,7 @@ bool match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2, DWORD *score)
     return matched; 
 }
 
-void create_template(BYTE *imageBuffer1, BYTE *templateBuffer1)  
+void create_template(BYTE *imageBuffer1, BYTE *templateBuffer1)  //criptografa a template e armazena
 {
     ///////////////////////////////////////////////
     // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)

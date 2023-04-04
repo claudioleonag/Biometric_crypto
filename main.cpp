@@ -9,6 +9,7 @@
 
 
 
+
 /* Header Files */
 #include "include/OLED_CONTROLER.h"
 #include "include/bio_reader.h"
@@ -55,10 +56,6 @@ int printf_ByteArray(const unsigned char *data, size_t len) {
 
 int main()
 {
-
-    
-
-
     bool matched;
     DWORD *score;
     BYTE *templateBuffer1;
@@ -68,24 +65,80 @@ int main()
     BYTE *imageBuffer;
     imageBuffer = (BYTE*) malloc(400*800);
     int err;
+    
 
+    
+    printf("\n-------------------------------------\n");
+    printf(  "TCC2 - Claudio Leon\n");
+    printf(  "-------------------------------------\n");
+    printf(  "Iniciando bloco criptografico...\n");
 
     ///// CRIPTO ////
     if (sodium_init() == -1)
     {
-        printf("Falha na inicialização");
+        printf("\nFalha na inicialização da biblioteca de criptografia");
     }
     else
     {
-        printf("Lib Sodium inicializada");
+        printf("\nBiblioteca de criptografia inicializada");
     }
-
 
     unsigned char key[crypto_secretbox_KEYBYTES];
     unsigned char nonce[crypto_secretbox_NONCEBYTES];
     unsigned char ciphertext[CIPHERTEXT_LEN];
+    unsigned char decrypted[MESSAGE_LEN];
 
-    crypto_secretbox_keygen(key);
+    FILE *fp = fopen("keys/key.txt", "r+");
+    if (fp == NULL){
+        printf("\nChave não criada, criando nova chave criptografica...");
+        crypto_secretbox_keygen(key); //cria nova chave
+        fp = fopen("keys/key.txt", "w");
+        fwrite (key , sizeof (key) , 1 , fp);
+        }
+    else{
+        printf("\nChave criptografica encontrada.");
+        fgets((char*)key, sizeof(key), fp);
+        fclose(fp);       
+        }
+
+
+    fp = fopen("keys/nonce.txt", "r+");
+    if (fp == NULL){
+        printf("\nNonce não criada, criando novo valor...");
+        randombytes_buf(nonce, sizeof nonce);  //cria nonce
+        fp = fopen("keys/nonce.txt", "w");
+        fwrite (nonce , sizeof (nonce) , 1 , fp);
+
+    }
+       else{
+        printf("\nNonce criptografica encontrada.");
+        fgets((char*)nonce, sizeof(nonce), fp);
+        fclose(fp);
+        }
+    printf("\n");
+    printf_ByteArray(MESSAGE, MESSAGE_LEN);
+    crypto_secretbox_easy(ciphertext, MESSAGE, MESSAGE_LEN, nonce, key);
+    printf("\n");
+    printf_ByteArray(ciphertext, MESSAGE_LEN);
+
+
+    crypto_secretbox_open_easy(decrypted, ciphertext, CIPHERTEXT_LEN, nonce, key);
+    printf("\n");
+    printf_ByteArray(decrypted, MESSAGE_LEN);
+
+     //cria nounce
+
+    /*
+    fp = fopen("keys/key","wb");
+    fwrite (key , 1 , sizeof(key) , fp);
+    fclose(fp);
+    fp = fopen("keys/nonce","wb");
+    fwrite (nonce , 1 , sizeof(key) , fp);
+    fclose(fp);
+
+
+
+
     randombytes_buf(nonce, sizeof nonce);
     crypto_secretbox_easy(ciphertext, MESSAGE, MESSAGE_LEN, nonce, key);
     printf("\n");
@@ -97,8 +150,6 @@ int main()
     printf("\n");
     printf_ByteArray(decrypted, MESSAGE_LEN);
 
-    crypto_secretbox_keygen(key);
-    randombytes_buf(nonce, sizeof nonce);
     crypto_secretbox_easy(ciphertext, MESSAGE, MESSAGE_LEN, nonce, key);
     printf("\n");
     printf_ByteArray(ciphertext, MESSAGE_LEN);
@@ -106,22 +157,22 @@ int main()
     crypto_secretbox_open_easy(decrypted, ciphertext, CIPHERTEXT_LEN, nonce, key);
     printf("\n");
     printf_ByteArray(decrypted, MESSAGE_LEN);
-
+  */
 
    ///////// END CRIPTO /////////
 
-    printf("\n-------------------------------------\n");
-    printf(  "TCC2 - Claudio Leon\n");
-    printf(  "-------------------------------------\n");
 
-    printf("olá do %s!\n", "Biometric_crypto");
+
     //init_oled();
     //write_oled("TCC2",1,0,3);
     //write_oled("Claudio Leon",1,30,1); //(x, y, tamanho fonte)
- 
+    printf(  "\n-------------------------------------\n");
+    printf(  "Iniciando leito biometrico...\n");
+
     if (err = open_reader()) // inicia o leitor
     {
-        printf("Falha em abrir o leitor");
+        printf("Falha em abrir o leitor, fechando o programa.\n");
+        exit(1);
     }
     else
     {
