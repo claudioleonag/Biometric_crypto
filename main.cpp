@@ -22,8 +22,7 @@ typedef unsigned long DWORD;
 #define MESSAGE_LEN 4
 #define CIPHERTEXT_LEN (crypto_secretbox_MACBYTES + MESSAGE_LEN)
 
-
-int printf_ByteArray(const unsigned char *data, size_t len) {
+int printf_ByteArray2(const unsigned char *data, size_t len) {
   size_t i;
   int result = 0;
   for (i = 0; i < len; i++) {
@@ -88,21 +87,24 @@ int main()
     unsigned char ciphertext[CIPHERTEXT_LEN];
     unsigned char decrypted[MESSAGE_LEN];
 
-    FILE *fp = fopen("keys/key.txt", "r+");
+    FILE *fp = fopen("keys/key", "rb");
     if (fp == NULL){
-        printf("\nChave não criada, criando nova chave criptografica...");
+        printf("\nChave não criada, criando nova chave criptografica...\n");
         crypto_secretbox_keygen(key); //cria nova chave
-        fp = fopen("keys/key.txt", "w");
-        fwrite (key , sizeof (key) , 1 , fp);
+        printf_ByteArray2(key, crypto_secretbox_KEYBYTES);
+        fp = fopen("keys/key", "wb");
+        fwrite(key, sizeof key[0], crypto_secretbox_KEYBYTES, fp);
+        fclose(fp); 
         }
     else{
-        printf("\nChave criptografica encontrada.");
-        fgets((char*)key, sizeof(key), fp);
+        printf("\nChave criptografica encontrada.\n");
+        fread(key, sizeof key[0], crypto_secretbox_KEYBYTES, fp);
+        printf_ByteArray2(key, crypto_secretbox_KEYBYTES);
         fclose(fp);       
         }
 
 
-    fp = fopen("keys/nonce.txt", "r+");
+    /*fp = fopen("keys/nonce.txt", "r+");
     if (fp == NULL){
         printf("\nNonce não criada, criando novo valor...");
         randombytes_buf(nonce, sizeof nonce);  //cria nonce
@@ -114,17 +116,17 @@ int main()
         printf("\nNonce criptografica encontrada.");
         fgets((char*)nonce, sizeof(nonce), fp);
         fclose(fp);
-        }
+        }*/
     printf("\n");
-    printf_ByteArray(MESSAGE, MESSAGE_LEN);
+    //printf_ByteArray(MESSAGE, MESSAGE_LEN);
     crypto_secretbox_easy(ciphertext, MESSAGE, MESSAGE_LEN, nonce, key);
     printf("\n");
-    printf_ByteArray(ciphertext, MESSAGE_LEN);
+    //printf_ByteArray(ciphertext, MESSAGE_LEN);
 
 
     crypto_secretbox_open_easy(decrypted, ciphertext, CIPHERTEXT_LEN, nonce, key);
     printf("\n");
-    printf_ByteArray(decrypted, MESSAGE_LEN);
+    //printf_ByteArray(decrypted, MESSAGE_LEN);
 
      //cria nounce
 
