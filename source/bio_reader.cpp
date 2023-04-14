@@ -5,9 +5,11 @@
 #include <unistd.h>
 #include <signal.h>
 #include <ctype.h>
+#include <errno.h>
 #include "../include/bio_reader.h"
 #include "../include/sgfplib.h"
 #include "../include/sodium.h"
+
 
 int printf_ByteArray(const unsigned char *data, size_t len) {
   size_t i;
@@ -58,8 +60,6 @@ int  getPIVQuality(int quality)
 #define MESSAGE_LEN 800
 #define CIPHERTEXT_LEN (crypto_secretbox_MACBYTES + MESSAGE_LEN)
 
-unsigned char key[crypto_secretbox_KEYBYTES];
-unsigned char nonce[crypto_secretbox_NONCEBYTES];
 unsigned char ciphertext[CIPHERTEXT_LEN];
 unsigned char decrypted[MESSAGE_LEN];
 
@@ -126,7 +126,7 @@ int open_reader()
         // setBrightness()
         strcpy(function,"SetBrightness()");
         printf("\nCall %s\n",function);
-        err = sgfplib->SetBrightness(100);
+        err = sgfplib->SetBrightness(30);
         printf("%s returned: %ld\n",function,err);
         
         ///////////////////////////////////////////////
@@ -134,15 +134,6 @@ int open_reader()
         strcpy(function,"SetLedOn(true)");
         printf("\nCall %s\n",function);
         err = sgfplib->SetLedOn(true);
-        usleep(100000);
-        err = sgfplib->SetLedOn(false);
-        usleep(100000);
-        err = sgfplib->SetLedOn(true);
-        usleep(100000);
-        err = sgfplib->SetLedOn(false);
-        usleep(100000);
-        err = sgfplib->SetLedOn(true);
-        printf("%s returned: %ld\n",function,err);
 
         ///////////////////////////////////////////////
         // getDeviceInfo()
@@ -165,6 +156,11 @@ int open_reader()
             printf("\tdeviceInfo.ImageDPI   : %ld\n", deviceInfo.ImageDPI);
             printf("\tdeviceInfo.FWVersion  : %04X\n", (unsigned int) deviceInfo.FWVersion);  
         }
+        // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)
+        strcpy(function,"SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)");
+        printf("\nCall %s\n",function);
+        err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_ISO19794);
+        printf("%s returned: %ld\n",function,err);
     }
     
     return 0;
@@ -172,39 +168,41 @@ int open_reader()
 
 void read_finger(BYTE *imageBuffer1)
 { 
-    do
-    {    
-    ///////////////////////////////////////////////
-    // getImage() - 1st Capture
-    printf("\n Please place your finger on sensor and press <ENTER> ");
-    //imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageHeight*deviceInfo.ImageWidth); - removido pois quebra o ponteiro
-    strcpy(function,"GetImage()");
-    printf("\nCall %s\n",function);
-    err = sgfplib->GetImage(imageBuffer1);
-    printf("%s returned: %ld\n",function,err);
-    /*if (err == SGFDX_ERROR_NONE)
-    {
-        sprintf(kbBuffer,"fingerData/digital_%i.raw",fingerID);
-        fp = fopen(kbBuffer,"wb"); 
-        fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
-        fclose(fp);
-    }*/
+    int imageErr;
+        ///////////////////////////////////////////////
+        // getImage() - 1st Capture
+        //imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageHeight*deviceInfo.ImageWidth); - removido pois quebra o ponteiro
+        strcpy(function,"GetImage()");
+        printf("\nCall %s\n",function);
+        imageErr = sgfplib->GetImage(imageBuffer1);
+        printf("%s returned: %ld\n",function,err);
+        /*if (err == SGFDX_ERROR_NONE)
+        {
+            sprintf(kbBuffer,"fingerData/digital_%i.raw",fingerID);
+            fp = fopen(kbBuffer,"wb"); 
+            fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
+            fclose(fp);
+        }*/
+        if (imageErr != 0)
+        {
+            printf("Falha na coleta da imagem da digital\n");
+        }
 
-    ///////////////////////////////////////////////
-    // getImageQuality()
-    strcpy(function,"GetImageQuality()");
-    printf("\nCall %s\n",function);
-    err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality);
-    printf("%s returned: %ld\n",function,err);
-    printf("Image quality : [%ld]\n",quality);
+        ///////////////////////////////////////////////
+        // getImageQuality()
+        strcpy(function,"GetImageQuality()");
+        printf("\nCall %s\n",function);
+        err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality);
+        printf("%s returned: %ld\n",function,err);
+        printf("Image quality : [%ld]\n",quality);
 
-    ///////////////////////////////////////////////
-    // ComputeNFIQ()
-    strcpy(function,"ComputeNFIQ()");
-    printf("\nCall %s\n",function);
-    nfiq = sgfplib->ComputeNFIQ(imageBuffer1, deviceInfo.ImageWidth, deviceInfo.ImageHeight);
-    printf("NFIQ : [%ld]\n",nfiq);
-    }while(nfiq < 80 && quality < 80);  
+        ///////////////////////////////////////////////
+        // ComputeNFIQ()
+        strcpy(function,"ComputeNFIQ()");
+        printf("\nCall %s\n",function);
+        nfiq = sgfplib->ComputeNFIQ(imageBuffer1, deviceInfo.ImageWidth, deviceInfo.ImageHeight);
+        printf("NFIQ : [%ld]\n",nfiq);
+
 }
 
 void close_reader()
@@ -223,51 +221,28 @@ void close_reader()
     printf("%s returned: %ld\n",function,err);
 }
 
-bool match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2, DWORD *score) //descriptografa as templates e compara
+bool match_finger(BYTE *templateBuffer1, DWORD *score,  unsigned char *key, unsigned char *nonce) //descriptografa as templates e compara
 {
+    matched = false;
     fingerID = 0;
-
-    //carrega a chave
-    fp = fopen("keys/key.txt", "r+");
-    if (fp == NULL)
-    {
-        printf("\nFalha na carga da chave");
-    }
-    fgets((char*)key, sizeof(key), fp);
-    fclose(fp);
-
-    printf("\n Print do key dentro do MATCH template");
-    printf_ByteArray(key, sizeof(key));
-    printf("\n Print do nonce dentro do MATCH template");
-    printf_ByteArray(nonce, sizeof(nonce));
-
-
-    // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)
-    strcpy(function,"SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)");
-    printf("\nCall %s\n",function);
-    err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_ISO19794);
-    printf("%s returned: %ld\n",function,err);
-
-    
-
     ///////////////////////////////////////////////
     // MatchTemplate()
     while (matched != true)
     {
         //randombytes_buf(nonce, sizeof(nonce)); //cria nonce para transação
-        printf("\nRealizando match na template: digital_%i.iso",fingerID);
+        
         sprintf(kbBuffer,"fingerData/digital_%i.iso",fingerID);
-        fp = fopen(kbBuffer, "r+");
+        fp = fopen(kbBuffer, "rb");
         if (fp == NULL) 
             {   
-                printf ("Sem mais templates, nenhum match realizado.\n");
+                printf ("\nSem mais templates, nenhum match realizado.\n");
                 break;
             }
         
-        err = fread(ciphertext, sizeof(ciphertext), 1, fp);
-        printf("\n Print do ciphertext dentro do MATCH template:");
-        printf_ByteArray(ciphertext, sizeof(ciphertext));
-        printf("\nValor do fread = %d", (int) err);
+        err = fread(ciphertext, sizeof ciphertext[0], CIPHERTEXT_LEN, fp);
+        //printf("\n Print do ciphertext dentro do MATCH template:");
+        //printf_ByteArray(ciphertext, CIPHERTEXT_LEN);
+        //printf("\nValor do fread = %d", (int) err);
         if (crypto_secretbox_open_easy(decrypted, ciphertext, CIPHERTEXT_LEN, nonce, key) == -1)
         {
             printf("\nErro na  remocao da criptografia\n");
@@ -275,11 +250,8 @@ bool match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2, DWORD *score) //
 
         fclose(fp);
         err = sgfplib->MatchIsoTemplate(templateBuffer1, 0, decrypted, 0, SL_NORMAL, &matched);
-        printf("%s returned: %ld\n",function,err);
-        if (matched == true)
-        printf("<<MATCH>>\n");
-        else
-        printf("<<NO MATCH>>\n");
+        printf("\nRealizando match na template: digital_%i.iso: %s",fingerID, matched? "MATCH":"NO MATCH");
+        fingerID++;
     }
     ///////////////////////////////////////////////
     // GetIsoMatchingScore()
@@ -292,18 +264,8 @@ bool match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2, DWORD *score) //
     return matched; 
 }
 
-void create_template(BYTE *imageBuffer1, BYTE *templateBuffer1)  //criptografa a template e armazena
-{
-
-    //carrega a chave
-    fp = fopen("keys/key.txt", "r+");
-    if (fp == NULL)
-    {
-        printf("\nFalha na carga da chave");
-    }
-    fgets((char*)key, sizeof(key), fp);
-    fclose(fp);
-
+int create_template(BYTE *imageBuffer1, BYTE *templateBuffer1, unsigned char *key, unsigned char *nonce, bool storage)  //criptografa a template e armazena
+{    
     ///////////////////////////////////////////////
     // SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)
     strcpy(function,"SetTemplateFormat(TEMPLATE_FORMAT_ISO19794)");
@@ -329,10 +291,13 @@ void create_template(BYTE *imageBuffer1, BYTE *templateBuffer1)  //criptografa a
     fingerInfo.ImpressionType = SG_IMPTYPE_LP;
     fingerInfo.ImageQuality = getPIVQuality(quality); //0 to 100
     printf("Valor quality %d\n", fingerInfo.ImageQuality);
-    err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, templateBuffer1);
-    printf("CreateTemplate returned : [%ld]\n",err);
-    randombytes_buf(nonce, sizeof(nonce)); //cria nonce para transação
-    crypto_secretbox_easy(ciphertext, templateBuffer1, MESSAGE_LEN, nonce, key);//criptografa a template
+    errno = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, templateBuffer1); //cria a template
+    printf("CreateTemplate returned : [%d]\n",errno);
+    if (errno != 0)
+    {
+        printf("Error creating template error: %s.\n", strerror(errno));
+        return(-1);
+    }
 
     if (err == SGFDX_ERROR_NONE)
     {
@@ -343,27 +308,39 @@ void create_template(BYTE *imageBuffer1, BYTE *templateBuffer1)  //criptografa a
         err = sgfplib->GetTemplateSize(templateBuffer1, &templateSize);
         printf("%s returned: %ld\n",function,err);
         printf("Template Size : [%ld]\n",templateSize);
-        sprintf(kbBuffer,"fingerData/digital_%i.iso",fingerID);
-        fp = fopen(kbBuffer,"wb");
-        fwrite (ciphertext , sizeof (ciphertext) , 1 , fp); //armazena template criptografada
-        fclose(fp);
-        fingerID++;
+ 
 
+        //contagem das minucias
         strcpy(function,"GetNumOfMinutiae()");
         printf("\nCall %s\n",function);
         err = sgfplib->GetNumOfMinutiae(TEMPLATE_FORMAT_ISO19794, templateBuffer1, &numOfMinutiae);
         printf("%s returned: %ld\n",function,err);
         printf("Minutiae Count : [%ld]\n",numOfMinutiae);
     }   
-    printf("\n tamanho do ciphertext: %d", sizeof(ciphertext));
-    printf("\n tamanho do templatebuffer: %d", (int) templateSize);
-    printf("\n Print do templatebuffer dentro do create template:");
-    printf_ByteArray(templateBuffer1, (int) templateSize);
-    printf("\n Print do ciphertext dentro do create template:");
-    printf_ByteArray(ciphertext, sizeof(ciphertext));
-    printf("\n Print do key dentro do create template");
-    printf_ByteArray(key, sizeof(key));
-    printf("\n Print do nonce dentro do create template");
-    printf_ByteArray(nonce, sizeof(nonce));
+    if (storage == true)
+    {
+        //criptografa e armazena a template
+        strcpy(function,"crypto()");
+        printf("\nCall %s\n",function);
+        if (crypto_secretbox_easy(ciphertext, templateBuffer1, MESSAGE_LEN, nonce, key) == -1)//criptografa a template
+        {
+            printf("\nErro na criptografia da template .iso");
+        }
+        else
+        {
+            printf("\nCriptografado template .iso");
+        }
+        sprintf(kbBuffer,"fingerData/digital_%i.iso",fingerID); 
+        fp = fopen(kbBuffer,"wb");
+        if (fp == NULL)
+        {
+            printf("\nErro no armazenamento da template criptografada");
+        }
+        fwrite(ciphertext , sizeof ciphertext[0] , CIPHERTEXT_LEN , fp);
+        printf("\nArmazenado com sucesso template ISO. Path:fingerData/digital_%i.iso", fingerID);
+        fclose(fp);
+        fingerID++;
+    }
+    return 0;
 }
 

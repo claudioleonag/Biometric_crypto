@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <ctype.h>
+#include <errno.h>
 
 
 
@@ -17,10 +18,6 @@
 
 typedef unsigned char BYTE;
 typedef unsigned long DWORD;
-
-#define MESSAGE ((const unsigned char *) "test")
-#define MESSAGE_LEN 4
-#define CIPHERTEXT_LEN (crypto_secretbox_MACBYTES + MESSAGE_LEN)
 
 int printf_ByteArray2(const unsigned char *data, size_t len) {
   size_t i;
@@ -84,14 +81,12 @@ int main()
 
     unsigned char key[crypto_secretbox_KEYBYTES];
     unsigned char nonce[crypto_secretbox_NONCEBYTES];
-    unsigned char ciphertext[CIPHERTEXT_LEN];
-    unsigned char decrypted[MESSAGE_LEN];
 
     FILE *fp = fopen("keys/key", "rb");
     if (fp == NULL){
         printf("\nChave não criada, criando nova chave criptografica...\n");
         crypto_secretbox_keygen(key); //cria nova chave
-        printf_ByteArray2(key, crypto_secretbox_KEYBYTES);
+        //printf_ByteArray2(key, crypto_secretbox_KEYBYTES);
         fp = fopen("keys/key", "wb");
         fwrite(key, sizeof key[0], crypto_secretbox_KEYBYTES, fp);
         fclose(fp); 
@@ -99,69 +94,29 @@ int main()
     else{
         printf("\nChave criptografica encontrada.\n");
         fread(key, sizeof key[0], crypto_secretbox_KEYBYTES, fp);
-        printf_ByteArray2(key, crypto_secretbox_KEYBYTES);
+        //printf_ByteArray2(key, crypto_secretbox_KEYBYTES);
         fclose(fp);       
         }
 
 
-    /*fp = fopen("keys/nonce.txt", "r+");
+    fp = fopen("keys/nonce", "rb");
     if (fp == NULL){
         printf("\nNonce não criada, criando novo valor...");
         randombytes_buf(nonce, sizeof nonce);  //cria nonce
-        fp = fopen("keys/nonce.txt", "w");
-        fwrite (nonce , sizeof (nonce) , 1 , fp);
+        //printf_ByteArray2(nonce, crypto_secretbox_NONCEBYTES);
+        fp = fopen("keys/nonce", "wb");
+        fwrite (nonce , sizeof nonce[0] , crypto_secretbox_NONCEBYTES , fp);
+        fclose(fp); 
 
     }
        else{
         printf("\nNonce criptografica encontrada.");
         fgets((char*)nonce, sizeof(nonce), fp);
+        fread(nonce, sizeof nonce[0], crypto_secretbox_NONCEBYTES, fp);
+        //printf_ByteArray2(nonce, crypto_secretbox_NONCEBYTES);
         fclose(fp);
-        }*/
-    printf("\n");
-    //printf_ByteArray(MESSAGE, MESSAGE_LEN);
-    crypto_secretbox_easy(ciphertext, MESSAGE, MESSAGE_LEN, nonce, key);
-    printf("\n");
-    //printf_ByteArray(ciphertext, MESSAGE_LEN);
+        }
 
-
-    crypto_secretbox_open_easy(decrypted, ciphertext, CIPHERTEXT_LEN, nonce, key);
-    printf("\n");
-    //printf_ByteArray(decrypted, MESSAGE_LEN);
-
-     //cria nounce
-
-    /*
-    fp = fopen("keys/key","wb");
-    fwrite (key , 1 , sizeof(key) , fp);
-    fclose(fp);
-    fp = fopen("keys/nonce","wb");
-    fwrite (nonce , 1 , sizeof(key) , fp);
-    fclose(fp);
-
-
-
-
-    randombytes_buf(nonce, sizeof nonce);
-    crypto_secretbox_easy(ciphertext, MESSAGE, MESSAGE_LEN, nonce, key);
-    printf("\n");
-    printf_ByteArray(ciphertext, MESSAGE_LEN);
-
-    unsigned char decrypted[MESSAGE_LEN];
-    crypto_secretbox_open_easy(decrypted, ciphertext, CIPHERTEXT_LEN, nonce, key);
-    int i;
-    printf("\n");
-    printf_ByteArray(decrypted, MESSAGE_LEN);
-
-    crypto_secretbox_easy(ciphertext, MESSAGE, MESSAGE_LEN, nonce, key);
-    printf("\n");
-    printf_ByteArray(ciphertext, MESSAGE_LEN);
-
-    crypto_secretbox_open_easy(decrypted, ciphertext, CIPHERTEXT_LEN, nonce, key);
-    printf("\n");
-    printf_ByteArray(decrypted, MESSAGE_LEN);
-  */
-
-   ///////// END CRIPTO /////////
 
 
 
@@ -199,29 +154,25 @@ int main()
         printf("d - Delete a fingerprint\n");
         printf("c - Close program\n");
 
-        switch(command)
+        switch(command) 
         {
 
         case 'r':   
 
             read_finger(imageBuffer);
-            create_template(imageBuffer, templateBuffer1);
+            errno = create_template(imageBuffer, templateBuffer1, key, nonce, true);
+            if (errno != 0)
+              {
+                  printf("Error creating template error: %s.\n", strerror(errno));
+                  return(-1);
+              }
             //write_oled("Register Sucess",1,0,1);
             break;
 
         case 'm':
             read_finger(imageBuffer);
-            create_template(imageBuffer, templateBuffer2);
-            matched = match_finger(templateBuffer1, templateBuffer2, score);
-            if (matched)
-            {
-                //write_oled("Finger Matched",1,0,1);
-                printf("<<MATCH>> realizado com sucesso.");    
-            }
-            else
-            {
-                printf("<< NO MATCH >>. %d");        
-            }
+            create_template(imageBuffer, templateBuffer1, key, nonce, false); //so desejo o buffer para comparar
+            matched = match_finger(templateBuffer1, score, key, nonce);
             break;
 
         case 'c':

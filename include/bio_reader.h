@@ -6,8 +6,8 @@ typedef unsigned long DWORD;
 
 int open_reader();
 void read_finger(BYTE *imageBuffer1);
-void create_template(BYTE *imageBuffer1, BYTE *templateBuffer1);
-bool match_finger(BYTE *templateBuffer1, BYTE *templateBuffer2, DWORD *score);
+int create_template(BYTE *imageBuffer1, BYTE *templateBuffer1, unsigned char *key, unsigned char *nonce, bool storage);
+bool match_finger(BYTE *templateBuffer1, DWORD *score,  unsigned char *key, unsigned char *nonce);
 void close_reader();
 
 #endif 
