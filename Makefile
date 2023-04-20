@@ -15,7 +15,7 @@ LDFLAGS = -shared   # linking flags
 CC = g++  # C compiler
 
 ssd: $(OBJS)
-	$(CC) -I$(INC) -L$(LIB) $^ -o $@ -lsgfplib -lsgnfiq -lsgimage -lsgfpamx -lsgfdu05 -lusb -lpthread -lsodium -Wall -Werror
+	$(CC) -I$(INC) -L$(LIB) $^ -o $@ -lsgfplib -lsgnfiq -lsgimage -lsgfpamx -lsgfdu05 -lusb -lpthread -lsodium -lsqlite3 -Wall -Werror
 
 clean:
 	rm -rf ssd $(OBJS)
