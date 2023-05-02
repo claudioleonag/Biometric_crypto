@@ -13,7 +13,10 @@
 main.o
 ssd
 fingerData/*
-
+module*
+Module*
+.vscode/*
+.tmp_versions/*
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

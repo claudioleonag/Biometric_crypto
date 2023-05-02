@@ -43,6 +43,14 @@ init_oled (void)
     {
       printf ("Failed to configure pin 22\r\n");
     }
+    if (system ("config-pin p9.12 gpio") == 0)
+    {
+      printf ("Pin 12 configured as GPIO sucessfully\r\n");
+    }
+    else
+    {
+      printf ("Failed to configure pin 12\r\n");
+    }
 
 
   /* Initialize I2C bus and connect to the I2C Device */

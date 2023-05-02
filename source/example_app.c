@@ -330,8 +330,7 @@ display_invert_normal ()
 }
 
 /* Draw a bitmap and 'animate' movement */
-void
-testdrawbitmap (const char *bitmap, unsigned char w, unsigned char h)
+void testdrawbitmap(const char *bitmap, unsigned char w, unsigned char h)
 {
   unsigned char icons[NUMFLAKES][3], f = 0;
 

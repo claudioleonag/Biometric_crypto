@@ -12,7 +12,7 @@ void display_texts();
 void display_texts();
 void display_bitmap();
 void display_invert_normal();
-void testdrawbitmap(const unsigned char *bitmap, unsigned char w, unsigned char h);
+void testdrawbitmap(const char *bitmap, unsigned char w, unsigned char h);
 void testdrawbitmap_eg();
 void deeplyembedded_credits();
  

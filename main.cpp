@@ -8,14 +8,24 @@
 #include <ctype.h>
 #include <errno.h>
 #include <sqlite3.h>
+#include <pthread.h>
+#include <sys/inotify.h>
+#include <fcntl.h>
 
 /* Header Files */
 #include "include/OLED_CONTROLER.h"
 #include "include/bio_reader.h"
 #include "include/sodium.h"
 
+//file Path definition
+
+#define keyPath "keys/key"
+#define gpioPath "/sys/class/gpio/gpio60/value"
+
 typedef unsigned char BYTE;
 typedef unsigned long DWORD;
+
+void *threadCrypto(void *key);
 
 int main()
 {
@@ -48,14 +58,16 @@ int main()
   unsigned char key[crypto_secretbox_KEYBYTES];
   unsigned char nonce[crypto_secretbox_NONCEBYTES];
 
-  FILE *fp = fopen("keys/key", "rb");
+  FILE *fp = fopen(keyPath, "rb");
   if (fp == NULL)
   {
-    printf("\nChave não criada, criando nova chave criptografica...\n");
-    crypto_secretbox_keygen(key); // cria nova chave
-    fp = fopen("keys/key", "wb");
-    fwrite(key, sizeof key[0], crypto_secretbox_KEYBYTES, fp);
-    fclose(fp);
+    printf("\n--- VIOLATED READER - STOP ---\n");
+    //printf("\nChave não criada, criando nova chave criptografica...\n");
+    //crypto_secretbox_keygen(key); // cria nova chave
+    //fp = fopen("keys/key", "wb");
+    //fwrite(key, sizeof key[0], crypto_secretbox_KEYBYTES, fp);
+    //fclose(fp);
+    exit(1);
   }
   else
   {
@@ -98,9 +110,12 @@ int main()
     printf("\n-------------------------------------\n");
     // write_oled("Leitor iniciado",1,0,1);
   }
-
+  // THREAD
+  pthread_t thread_id;
+  printf("Before Thread\n");
+  pthread_create(&thread_id, NULL, threadCrypto, key);
+  
   // menu implementation
-
   int command;
   printf("\n\n\n-- MENU --\n");
   printf("r - Register new fingerprint\n");
@@ -149,9 +164,35 @@ int main()
       free(imageBuffer);
       free(templateBuffer1);
       free(templateBuffer2);
+      pthread_exit(NULL);
       printf("\nThanks!!");
       return 0;
     }
   }
   return 0;
+}
+
+void *threadCrypto(void *key)
+{
+  char GPIOStatus[10];
+  printf("Watching : %s\n",gpioPath);
+  while(1)
+  {
+    FILE *fp = fopen("/sys/class/gpio/gpio60/value", "rb");
+    if (fp == NULL)
+    {
+      printf("\nFalha na leitura do GPIO...\n");
+    }
+    fread(GPIOStatus, sizeof(int), 1, fp);
+    char *buf;
+    long status = strtol(GPIOStatus,&buf, 10);
+    if (status == 1)
+    {
+      printf("--- TAMPER-PROOF DETECTED TERMINATING CRYPTOGRAPH KEY AND CLOSING PROGRAM ---\n");
+      system("rm -f /home/debian/Biometric_crypto/keys/key");
+      exit(1);
+    }
+    fclose(fp);
+    sleep(0.1);
+  }
 }

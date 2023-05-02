@@ -11,49 +11,6 @@
 #include "../include/sgfplib.h"
 #include "../include/sodium.h"
 
-int printf_ByteArray(const unsigned char *data, size_t len)
-{
-  size_t i;
-  int result = 0;
-  for (i = 0; i < len; i++)
-  {
-    int y;
-    int ch = data[i];
-    static char escapec[] = "\a\b\t\n\v\f\n\'\"\?\\";
-    char *p = strchr(escapec, ch);
-    if (p && ch)
-    {
-      static char escapev[] = "abtnvfn\'\"\?\\";
-      y = printf("\\%c", escapev[p - escapec]);
-    }
-    else if (isprint(ch))
-    {
-      y = printf("%c", ch);
-    }
-    else
-    {
-      // If at end of array, assume _next_ potential character is a '0'.
-      int nch = i >= (len - 1) ? '0' : data[i + 1];
-      if (ch < 8 && (nch < '0' || nch > '7'))
-      {
-        y = printf("\\%o", ch);
-      }
-      else if (!isxdigit(nch))
-      {
-        y = printf("\\x%X", ch);
-      }
-      else
-      {
-        y = printf("\\o%03o", ch);
-      }
-    }
-    if (y == EOF)
-      return EOF;
-    result += y;
-  }
-  return result;
-}
-
 int getPIVQuality(int quality)
 {
   if (quality <= 20)
@@ -101,6 +58,7 @@ char *zErrMsg = 0;
 char sql[800]; // size of a template
 int open_reader()
 {
+  system ("export CRYPTO_KEY_PATH=/gome/debian/Biometric_crypto/keys");
   // initiate database
   printf("\n-------------------------------------\n");
   printf("Starting database...\n");
@@ -222,6 +180,7 @@ int read_finger(BYTE *imageBuffer1)
     if (errno != 0)
     {
       printf("Failed to capture image: %s.\n", strerror(errno));
+      exit(1);
     }
 
     ///////////////////////////////////////////////

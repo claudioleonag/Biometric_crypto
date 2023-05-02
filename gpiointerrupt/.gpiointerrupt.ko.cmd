@@ -1,1 +1,0 @@
-cmd_/home/debian/Biometric_crypto/gpiointerrupt/gpiointerrupt.ko := ld -r  -EL -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds  --build-id  -o /home/debian/Biometric_crypto/gpiointerrupt/gpiointerrupt.ko /home/debian/Biometric_crypto/gpiointerrupt/gpiointerrupt.o /home/debian/Biometric_crypto/gpiointerrupt/gpiointerrupt.mod.o ;  true
