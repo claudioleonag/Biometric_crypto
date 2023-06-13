@@ -62,6 +62,7 @@ int main()
   if (fp == NULL)
   {
     printf("\n--- VIOLATED READER - STOP ---\n");
+    write_oled("Device violated!!.",1,0,1);
     //printf("\nChave não criada, criando nova chave criptografica...\n");
     //crypto_secretbox_keygen(key); // cria nova chave
     //fp = fopen("keys/key", "wb");
@@ -93,9 +94,8 @@ int main()
     fclose(fp);
   }
 
-  // init_oled();
-  // write_oled("TCC2",1,0,3);
-  // write_oled("Claudio Leon",1,30,1); //(x, y, tamanho fonte)
+  init_oled();
+  write_oled("TCC2 - Claudio Leon",1,0,1);//(x, y, tamanho fonte)
   printf("\n-------------------------------------\n");
   printf("Iniciando leito biometrico...\n");
 
@@ -108,7 +108,7 @@ int main()
   {
     printf("\nSucesso em abrir o leitor\n");
     printf("\n-------------------------------------\n");
-    // write_oled("Leitor iniciado",1,0,1);
+    write_oled("Leitor iniciado",1,0,1);
   }
   // THREAD
   pthread_t thread_id;
@@ -117,6 +117,7 @@ int main()
   
   // menu implementation
   int command;
+  write_oled("Selecione sua opcao",1,0,1);
   printf("\n\n\n-- MENU --\n");
   printf("r - Register new fingerprint\n");
   printf("m - Match a fingerprint\n");
@@ -135,7 +136,7 @@ int main()
     {
 
     case 'r':
-
+      write_oled("Registro - Selecionado",1,0,1);
       errno = read_finger(imageBuffer);
       if (errno != 0)
       {
@@ -150,16 +151,26 @@ int main()
                strerror(errno));
         return (-1);
       }
-      // write_oled("Register Sucess",1,0,1);
+      write_oled("Register Sucess",1,0,1);
       break;
 
     case 'm':
+      write_oled("Match - Selecionado",1,0,1);
       read_finger(imageBuffer);
       create_template(imageBuffer, templateBuffer1, key, nonce, false); // so desejo o buffer para comparar
       matched = match_finger(templateBuffer1, score, key, nonce);
+      if (matched == true)
+      {
+        write_oled("Match found.",1,0,1);
+      }
+      else
+      {
+          write_oled("Match NOT found.",1,0,1);
+      }
       break;
 
     case 'c':
+      write_oled("Obrigado",1,0,1);
       close_reader();
       free(imageBuffer);
       free(templateBuffer1);
@@ -190,7 +201,9 @@ void *threadCrypto(void *key)
     {
       printf("--- TAMPER-PROOF DETECTED TERMINATING CRYPTOGRAPH KEY AND CLOSING PROGRAM ---\n");
       system("rm -f /home/debian/Biometric_crypto/keys/key");
+      write_oled("Device violated!!.",1,0,1);
       exit(1);
+      
     }
     fclose(fp);
     sleep(0.1);

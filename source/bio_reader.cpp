@@ -180,7 +180,7 @@ int read_finger(BYTE *imageBuffer1)
     if (errno != 0)
     {
       printf("Failed to capture image: %s.\n", strerror(errno));
-      exit(1);
+      //exit(1);
     }
 
     ///////////////////////////////////////////////
